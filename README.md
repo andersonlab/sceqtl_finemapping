@@ -1,4 +1,4 @@
-### Bradley 12/12/25
+### Bradley
 Adjustment of Celeste's pipeline - fine mapping specific gene in all cell-types (regardless of significance). Define options
 ```
 gene=FUBP1
@@ -34,7 +34,7 @@ region_file="input/vcf/${gene}_gene_window.txt"
 bash scripts/filter_vcf_by_region-compute_LD.sh "$VCF_FILE" "$region_file" "$filt_vcf" "$LD_file_pref"
 ```
 
-3. Reformat the eQTLs for finemapping, then finemap
+3. Finemap
 ```
 MEM=5000
 fmpath="results/finemapping"
@@ -57,8 +57,3 @@ for celltype in "${format_celltypes[@]}"; do
 done
 ```
 
-bsub -J "sample_hits-${level}-${i}" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 \
-      -e logs/sample_hits-${level}-${i}-stderr \
-      -o logs/sample_hits-${level}-${i}-stdout \
-      "Rscript eqtl_props/02_bootstrap_hits.R $i $level> \
-      logs/process_sample_hits-${level}-${i}.Rout"
