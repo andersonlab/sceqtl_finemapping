@@ -1,24 +1,30 @@
 ### Bradley
-Adjustment of Celeste's pipeline - fine mapping specific gene in all cell-types (regardless of significance). Define options
+Adjustment of Celeste's pipeline - fine mapping specific gene in all cell-types (regardless of significance). 
+1. Define celltypes
 ```
-gene=FUBP1
-gene_ens=ENSG00000162613
-VCF_FILE="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/core_analysis_output/IBDverse_multi-tissue_eQTL_project/IBDverse_genotypes/2024_07_11-genotype_plate12345/imputed.vcf.gz"
+mkdir -p {logs,results,input}
 eqtl_dir="../../../../core_analysis_output/IBDverse_multi-tissue_eQTL_project/2025_06_11-multi_tissue_base_results"
-```
-
-Get celltypes
-```
-mapfile -t celltypes < <(ls -1A "$eqtl_dir")
-for f in "${celltypes[@]}"; do
-  new="${f//dMean__/}"   # remove all occurrences of dMean__
-  new="${new//_all/}"    # remove all occurrences of _all
-  format_celltypes+=("$new")
+for f in ${eqtl_dir}/*; do
+  f=$(basename "${f#dMean__}")
+  f="${f%_all}"
+  echo $f >> input/celltypes.txt
 done
 ```
 
+2. Get the genes we want to test
+```
+varex_f="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/tobi_qtl_analysis/plots/multi_tissue_2025/coloc/coloc_loci/colocs_table-var_explained-0pt75.tsv"
+Rscript scripts/000-get_coloc_genes.r $varex_f
+```
+
+3. Submit pipeline
+
+
+
+
 1. Subset vcf to region around specific gene
 ```
+module load $uber
 mkdir -p input/{vcf,LDmatrix}
 mkdir -p results/finemapping
 mkdir -p logs
