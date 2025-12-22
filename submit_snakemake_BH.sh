@@ -38,4 +38,4 @@ snakemake -j 20000 \
     --keep-going \
     --restart-times 0 
 
-# bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q normal -J "snakemake_master_CLUMP" -G humgen-priority < submit_snakemake_BH.sh 
+# bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q normal -J "snakemake_master_FINEMAP" < submit_snakemake_BH.sh 

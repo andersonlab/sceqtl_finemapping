@@ -68,7 +68,6 @@ echo "..VCF filtering and conversion to BGEN completed!"
 
 # get a plink2 .bim file to make the .z input file for LDstore2
 echo "..Creating PLINK2 .bim file"
-module load cellgen/plink/2.00
 plink2 --bgen ${OUTPUT_VCF_PREFIX}_genotypes.bgen ref-unknown --make-just-bim --out ${OUTPUT_VCF_PREFIX}
 
 #make the .z input file

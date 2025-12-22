@@ -37,18 +37,18 @@ rule prep_genotypes:
         mem_mib=1000,
         disk_mb=1000,
     singularity:
-        ""
+        "/software/hgi/softpack/installs/users/bh18//finemapping/3-scripts/singularity.sif"
     shell:
         r"""
-            mkdir -p input/{vcf,LDmatrix}
+            mkdir -p input/{{vcf,LDmatrix}}
             mkdir -p results/finemapping
             mkdir -p logs
-            Rscript scripts/get_gene_window.r {wildcards.gene} $gene_ens
+            Rscript scripts/get_gene_window.r {wildcards.gene} {wildcards.gene}
             
             # Then prep the genotypes
             filt_vcf="input/vcf/{wildcards.gene}_"
             LD_file_pref="input/LDmatrix/{wildcards.gene}"
-            region_file="input/vcf/${wildcards.gene}_gene_window.txt"
+            region_file="input/vcf/{wildcards.gene}_gene_window.txt"
             bash scripts/filter_vcf_by_region-compute_LD.sh {params.vcf} "$region_file" "$filt_vcf" "$LD_file_pref"
         """    
 
@@ -64,15 +64,19 @@ rule run_susie:
         mem_mb=5000,
         mem_mib=5000,
         disk_mb=5000
+    singularity:
+        "/software/hgi/softpack/installs/users/bh18//finemapping/3-scripts/singularity.sif"
     shell:
         r"""
             SAMPLESIZE=$(awk '{{print NF-1; exit}}' {params.eqtl_dir}/dMean__{wildcards.celltype}_all/OPTIM_pcs/base_output/base/Covariates.tsv)
-            chr=$(awk -F'\t' 'NR==1{{} sub(/^chr/,"",$1); print $1 }}' input/vcf/{wildcards.gene}_gene_window.txt)
-            
+            echo "SAMPLESIZE: " ${{SAMPLESIZE}}
+            chr=$(awk -F'\t' 'NR==1{{sub(/^chr/,"",$1); print $1}}' input/vcf/{wildcards.gene}_gene_window.txt)
+            echo "chr: " ${{chr}}
+
             Rscript scripts/runsusie.r \
                     {wildcards.gene} \
-                    {params.eqtl_dir}/dMean__{wildcards.celltype}_all/OPTIM_pcs/base_output/base/cis_nominal1.cis_qtl_pairs.$chr.tsv \
-                    $SAMPLESIZE \
+                    {params.eqtl_dir}/dMean__{wildcards.celltype}_all/OPTIM_pcs/base_output/base/cis_nominal1.cis_qtl_pairs.${{chr}}.tsv \
+                    ${{SAMPLESIZE}} \
                     {input} \
                     input/vcf/{wildcards.gene}_.z \
                     results/finemapping/{wildcards.gene}/{wildcards.celltype}.

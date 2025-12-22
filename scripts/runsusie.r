@@ -14,13 +14,35 @@ lines=readLines(nominalsumstats)
 header=lines[1]
 gene_lines=strsplit(grep(gene,lines,value=TRUE),'\t')
 sumstats=as.data.frame(do.call(rbind,gene_lines))
+if(nrow(sumstats) == 0){
+    print("..Gene not found in sumstats, exiting and saving dummy output")
+    dummy <- data.frame(
+        credible_set = character(),
+        phenotype_id = character(),
+        variant_id = character(),
+        start_distance = numeric(),
+        af = numeric(),
+        ma_samples = integer(),
+        ma_count = integer(),
+        pval_nominal = numeric(),
+        slope = numeric(),
+        slope_se = numeric(),
+        snp_number_in_window = integer(),
+        PIP = numeric(),
+        cs_log10bayesfactor = numeric(),
+        cs_avg_r2 = numeric(),
+        cs_min_r2 = numeric(),
+        samplesize = integer(),
+        stringsAsFactors = FALSE
+    )   
+    write.table(dummy, paste0(outpath,'crediblesets.txt'),row.names = FALSE, col.names = TRUE,quote=FALSE) #write results
+    quit(save = "no", status = 0)
+}
 colnames(sumstats)=strsplit(header,'\t')[[1]]
 
 #read in the ld matrix and .z file
 LDmatrix=read.table(LDmatrix_path)
 LDsnps=read.table(LDsnps_path,header=TRUE)
-
-
 
 #Get index for LDmatrix SNPs not present in summary statistics
 index=which(!(LDsnps$rsid %in% sumstats$variant_id))
@@ -102,7 +124,27 @@ fitted_rss1 <- susie_rss(bhat = as.numeric(sumstats_filt$slope), #effect size
 
 #prepare results
 if(is.null(summary(fitted_rss1)$cs)){
-    print("No credible sets found.")
+    print("No credible sets found, saving empty dataframe")
+    dummy <- data.frame(
+        credible_set = character(),
+        phenotype_id = character(),
+        variant_id = character(),
+        start_distance = numeric(),
+        af = numeric(),
+        ma_samples = integer(),
+        ma_count = integer(),
+        pval_nominal = numeric(),
+        slope = numeric(),
+        slope_se = numeric(),
+        snp_number_in_window = integer(),
+        PIP = numeric(),
+        cs_log10bayesfactor = numeric(),
+        cs_avg_r2 = numeric(),
+        cs_min_r2 = numeric(),
+        samplesize = integer(),
+        stringsAsFactors = FALSE
+    )   
+    write.table(dummy, paste0(outpath,'crediblesets.txt'),row.names = FALSE, col.names = TRUE,quote=FALSE) #write results
 } else {
     pips=summary(fitted_rss1)$vars #get posterior inclusion probabilities
     cs_pips=pips[pips$cs!=-1,] #keep only those from a credible set
