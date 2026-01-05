@@ -14,12 +14,12 @@ with open(config["celltypes"], "r") as f:
 ##########
 # Rule all
 ##########
-def gather_cs(wildcards):
-    return expand("results/finemapping/{gene}/{celltype}.crediblesets.txt", gene = genes, celltype=celltypes)
+def gather_cs_per_gene(wildcards):
+    return expand("results/finemapping/{gene}/{celltype}.crediblesets.txt", gene = wildcards.gene, celltype=celltypes)
 
 rule all:
     input:
-         gather_cs
+         expand("results/coloc/{gene}_coloc_postfinemap.txt", gene=genes)
 
 ##########
 # Rules
@@ -60,12 +60,12 @@ rule run_susie:
     params:
         eqtl_dir=config["eqtl_dir"]
     resources:
-        mem=5000,
-        mem_mb=5000,
-        mem_mib=5000,
-        disk_mb=5000
+        mem=10000,
+        mem_mb=10000,
+        mem_mib=10000,
+        disk_mb=10000
     singularity:
-        "/software/hgi/softpack/installs/users/bh18//finemapping/3-scripts/singularity.sif"
+        "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
     shell:
         r"""
             SAMPLESIZE=$(awk '{{print NF-1; exit}}' {params.eqtl_dir}/dMean__{wildcards.celltype}_all/OPTIM_pcs/base_output/base/Covariates.tsv)
@@ -83,4 +83,28 @@ rule run_susie:
             
         """
         
-        
+rule coloc_postfinemap:
+    input:
+        gather_cs_per_gene
+    output:
+        "results/coloc/{gene}_coloc_postfinemap.txt"
+    params:
+        colocthresh=config["colocthresh"]
+    resources:
+        mem=10000,
+        mem_mb=10000,
+        mem_mib=10000,
+        disk_mb=10000
+    singularity:
+        "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
+    shell:
+        r"""
+            mkdir -p results/coloc
+            Rscript scripts/get_eQTL_coloc_networks.r \
+                {wildcards.gene} \
+                "results/finemapping/{wildcards.gene}" \
+                "input/LDmatrix/{wildcards.gene}.ld" \
+                "input/vcf/{wildcards.gene}_.z" \
+                {params.colocthresh}
+        """
+    

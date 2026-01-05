@@ -29,12 +29,13 @@ snakemake -j 20000 \
     --latency-wait 90 \
     --use-envmodules \
     --rerun-incomplete \
+    --rerun-triggers mtime \
     --keep-going \
     --directory ${workdir} \
     --cluster-config ${config_var} \
     --cluster-config cluster_config.yaml \
     --use-singularity \
-    --singularity-args "-B /lustre,/software,/nfs/users/nfs_b/bh18/.local/lib/python3.7/site-packages" \
+    --singularity-args "-B /lustre,/software" \
     --keep-going \
     --restart-times 0 
 

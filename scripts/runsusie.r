@@ -14,9 +14,9 @@ lines=readLines(nominalsumstats)
 header=lines[1]
 gene_lines=strsplit(grep(gene,lines,value=TRUE),'\t')
 sumstats=as.data.frame(do.call(rbind,gene_lines))
-if(nrow(sumstats) == 0){
-    print("..Gene not found in sumstats, exiting and saving dummy output")
-    dummy <- data.frame(
+
+# Make dummy - to be saved if finemapping is not possible
+dummy <- data.frame(
         credible_set = character(),
         phenotype_id = character(),
         variant_id = character(),
@@ -35,6 +35,9 @@ if(nrow(sumstats) == 0){
         samplesize = integer(),
         stringsAsFactors = FALSE
     )   
+
+if(nrow(sumstats) == 0){
+    print("..Gene not found in sumstats, exiting and saving dummy output") 
     write.table(dummy, paste0(outpath,'crediblesets.txt'),row.names = FALSE, col.names = TRUE,quote=FALSE) #write results
     quit(save = "no", status = 0)
 }
@@ -113,37 +116,24 @@ colnames(R) <- NULL
 
 
 #run susie
-fitted_rss1 <- susie_rss(bhat = as.numeric(sumstats_filt$slope), #effect size
-    shat = as.numeric(sumstats_filt$slope_se), #standard error
-    n = as.numeric(n), #samplesize
-    R = R, #LDmatrix – I assume of just the relevant SNPs?
-    L = 10, #maximum number of causal variants, default=10
-    estimate_residual_variance = FALSE) #TRUE because R is the in-sample LD matrix, but FALSE because this doesn't work for every gene
+fitted_rss1 <- tryCatch({
+    susie_rss(bhat = as.numeric(sumstats_filt$slope), #effect size
+        shat = as.numeric(sumstats_filt$slope_se), #standard error
+        n = as.numeric(n), #samplesize
+        R = R, #LDmatrix – I assume of just the relevant SNPs?
+        L = 10, #maximum number of causal variants, default=10
+        estimate_residual_variance = FALSE) #TRUE because R is the in-sample LD matrix, but FALSE because this doesn't work for every gene
+}, error = function(e) {
+    print(paste("Error encountered in susie_rss:", e$message))
+    print("Saving empty credible sets dataframe and exiting")
+    write.table(dummy, paste0(outpath,'crediblesets.txt'),row.names = FALSE, col.names = TRUE,quote=FALSE)
+    quit(save = "no", status = 0)
+})
 
 
 
 #prepare results
 if(is.null(summary(fitted_rss1)$cs)){
-    print("No credible sets found, saving empty dataframe")
-    dummy <- data.frame(
-        credible_set = character(),
-        phenotype_id = character(),
-        variant_id = character(),
-        start_distance = numeric(),
-        af = numeric(),
-        ma_samples = integer(),
-        ma_count = integer(),
-        pval_nominal = numeric(),
-        slope = numeric(),
-        slope_se = numeric(),
-        snp_number_in_window = integer(),
-        PIP = numeric(),
-        cs_log10bayesfactor = numeric(),
-        cs_avg_r2 = numeric(),
-        cs_min_r2 = numeric(),
-        samplesize = integer(),
-        stringsAsFactors = FALSE
-    )   
     write.table(dummy, paste0(outpath,'crediblesets.txt'),row.names = FALSE, col.names = TRUE,quote=FALSE) #write results
 } else {
     pips=summary(fitted_rss1)$vars #get posterior inclusion probabilities
