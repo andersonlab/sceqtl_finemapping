@@ -19,7 +19,8 @@ def gather_cs_per_gene(wildcards):
 
 rule all:
     input:
-         expand("results/coloc/{gene}_coloc_postfinemap.txt", gene=genes)
+         expand("results/coloc/{gene}_coloc_postfinemap.txt", gene=genes),
+         expand("results/coloc/{gene}_pairwise_coloc_results.txt", gene=genes)
 
 ##########
 # Rules
@@ -87,7 +88,8 @@ rule coloc_postfinemap:
     input:
         gather_cs_per_gene
     output:
-        "results/coloc/{gene}_coloc_postfinemap.txt"
+        "results/coloc/{gene}_coloc_postfinemap.txt",
+        "results/coloc/{gene}_pairwise_coloc_results.txt"
     params:
         colocthresh=config["colocthresh"]
     resources:

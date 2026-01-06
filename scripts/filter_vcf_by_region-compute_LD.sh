@@ -62,7 +62,7 @@ echo "..Stats files: $STATS_VCF_FILE, $STATS_VCF_OUTPUT_FILE"
 echo "..Converting to bgen format"
 module load HGI/softpack/users/cc53/finemapping/1
 qctool -g "${OUTPUT_VCF_PREFIX}_filtered-low-mafs.vcf.gz" -og "${OUTPUT_VCF_PREFIX}_genotypes.bgen" -os "${OUTPUT_VCF_PREFIX}_genotypes.sample"
-bgenix -index -g "${OUTPUT_VCF_PREFIX}_genotypes.bgen"
+bgenix -index -g "${OUTPUT_VCF_PREFIX}_genotypes.bgen" -clobber
 echo "..BGEN files created: ${OUTPUT_VCF_PREFIX}_genotypes.bgen, ${OUTPUT_VCF_PREFIX}_genotypes.sample"
 echo "..VCF filtering and conversion to BGEN completed!"
 
