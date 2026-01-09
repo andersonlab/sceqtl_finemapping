@@ -1,5 +1,16 @@
-### Bradley
-Adjustment of Celeste's pipeline - fine mapping specific gene in all cell-types (regardless of significance). 
+### Fine mapping sc-eQTLs and colocalisation of credible sets.
+#### Bradley - 09/01/2026
+Adjustment of Celeste E. Cohens's pipeline to be ran with snakemake and on specific genes only across all cell-types.
+Requires eQTLs to already be calculated.
+
+### Installation
+If working on Sanger farm, no instals needed. Otherwise, need to install the finemapping singularity container from docker and adjust paths in the snakefile accordingly. 
+```
+export SINGULARITY_CACHEDIR=$PWD/.singularity_cache
+mkdir -p "$SINGULARITY_CACHEDIR"
+singularity pull docker://bh18/sceqtl_finemapping
+```
+
 1. Define celltypes
 ```
 mkdir -p {logs,results,input}

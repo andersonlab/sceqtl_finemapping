@@ -4,6 +4,8 @@ suppressPackageStartupMessages(library(coloc))
 suppressPackageStartupMessages(library(igraph))
 suppressPackageStartupMessages(library(digest))
 
+# NOTE: There are some errors from susie that are being ignored. 
+
 ##################
 # Define functions
 ##################
@@ -11,8 +13,7 @@ pairwise_coloc = function(nomlist, ct1, ct2){
     variants_1 = nomlist[[ct1]]$variant_id
     variants_2 = nomlist[[ct2]]$variant_id
     common = intersect(variants_1, variants_2)
-    if(length(common) == 0){
-        dummy=data.frame(
+    dummy=data.frame(
             nsnps = 0,
             hit1 = nomlist[[ct1]] %>% slice_min(pval_nominal, with_ties = FALSE) %>% pull(variant_id),
             hit2 = nomlist[[ct2]] %>% slice_min(pval_nominal, with_ties = FALSE) %>% pull(variant_id),
@@ -26,6 +27,7 @@ pairwise_coloc = function(nomlist, ct1, ct2){
             cond1 = ct1, 
             cond2 = ct2
         )
+    if(length(common) == 0){
         return(dummy)
     }
 
@@ -51,7 +53,12 @@ pairwise_coloc = function(nomlist, ct1, ct2){
         LD = as.matrix(LDmatrix)   
     )
 
-    res = suppressMessages(coloc.susie(dataset1 = D1, dataset2 = D2)$summary)
+    res = tryCatch({
+        coloc.susie(dataset1 = D1, dataset2 = D2)$summary
+    }, error = function(e) {
+        print(paste0("Error in coloc.susie for ", ct1, " vs ", ct2, ": ", e$message))
+        return(dummy)
+    })
     res$cond1 = ct1
     res$cond2 = ct2
     rownames(res) = NULL
