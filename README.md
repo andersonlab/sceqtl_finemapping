@@ -8,7 +8,7 @@ If working on Sanger farm, no instals needed. Otherwise, need to install the fin
 ```
 export SINGULARITY_CACHEDIR=$PWD/.singularity_cache
 mkdir -p "$SINGULARITY_CACHEDIR"
-singularity pull docker://bh18/sceqtl_finemapping
+singularity pull docker pull bh18/sceqtl_finemapping:5
 ```
 
 1. Define celltypes
