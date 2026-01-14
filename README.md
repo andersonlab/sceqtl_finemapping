@@ -4,13 +4,14 @@ Adjustment of Celeste E. Cohens's pipeline to be ran with snakemake and on speci
 Requires eQTLs to already be calculated.
 
 ### Installation
-If working on Sanger farm, no instals needed. Otherwise, need to install the finemapping singularity container from docker and adjust paths in the snakefile accordingly. 
+If working on Sanger farm, no installs needed. Otherwise, need to install the finemapping singularity container from docker and adjust paths in the snakefile accordingly. 
 ```
 export SINGULARITY_CACHEDIR=$PWD/.singularity_cache
 mkdir -p "$SINGULARITY_CACHEDIR"
 singularity pull docker pull bh18/sceqtl_finemapping:5
 ```
 
+### If running on specific sets of genes (e.g hundreds of disease effector genes)
 1. Define celltypes
 ```
 mkdir -p {logs,results,input}
@@ -33,4 +34,37 @@ Rscript scripts/000-get_coloc_genes.r $varex_f
 ```
 bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q oversubscribed -J "snakemake_master_FINEMAP" < submit_snakemake_BH.sh 
 ```
+
+### Or, if running on all genes - need to chunk
+1. Define cell-types as before. Then define genes using all eGenes in 1000 gene chunks. These files are `input/all_egenes_chunk_<i>.txt`
+```
+Rscript scripts/000-get_all_genes.r
+```
+
+2. Submit pipeline. NOTE: Need to adjust the gene_file flag in `config.yaml` to run for each chunk.
+```
+bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q oversubscribed -J "snakemake_master_FINEMAP" < submit_snakemake_BH.sh 
+```
+
+3. Tidy up the output after each chunk.
+```
+chunk=1
+mkdir -p results_all_egenes
+rm -r logs/* # Remove log files
+rm -r sm_logs/*
+rm -r input/LDmatrix # Remove temporary LD files
+rm -r input/vcf # Remove temporary genotyping files
+mv results results_${chunk}
+bash scripts/998-aggregate_results_per_chunk.sh results_${chunk} input/gene_chr_map.txt # Aggregate the per-cell-type finemapping files from this chunk and aggregate
+mv results_${chunk} results_all_egenes/
+```
+
+4. Combine results after ALL chunks
+```
+```
+
+
+
+
+
 

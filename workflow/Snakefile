@@ -61,10 +61,10 @@ rule run_susie:
     params:
         eqtl_dir=config["eqtl_dir"]
     resources:
-        mem=10000,
-        mem_mb=10000,
-        mem_mib=10000,
-        disk_mb=10000
+        mem=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        mem_mib=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        disk_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1))
     singularity:
         "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
     shell:
