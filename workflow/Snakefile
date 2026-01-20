@@ -10,6 +10,14 @@ with open(config["gene_file"], "r") as f:
 with open(config["celltypes"], "r") as f:
     celltypes = [line.strip() for line in f if line.strip()]
 
+# Dynamically determine memory
+def mem_from_input(input_file, multiplier=10, min=4000):
+    """Return memory in MB as input_file_size_GB × multiplier × 1024."""
+    size_bytes = os.path.getsize(input_file)
+    size_gb = size_bytes / (1024**3)
+    mem_mb = int(size_gb * multiplier * 1024)
+    # enforce a reasonable minimum
+    return max(mem_mb, min)
 
 ##########
 # Rule all
@@ -33,10 +41,10 @@ rule prep_genotypes:
         vcf=config["VCF_FILE"],
         gene_file=config["gene_file"]
     resources:
-        mem=3000,
-        mem_mb=3000,
-        mem_mib=3000,
-        disk_mb=3000,
+        mem=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+        mem_mib=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+        disk_mb=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
     singularity:
         "/software/hgi/softpack/installs/users/bh18//finemapping/3-scripts/singularity.sif"
     shell:
@@ -61,10 +69,10 @@ rule run_susie:
     params:
         eqtl_dir=config["eqtl_dir"]
     resources:
-        mem=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
-        mem_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
-        mem_mib=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
-        disk_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1))
+        mem=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000),
+        mem_mb=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000),
+        mem_mib=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000),
+        disk_mb=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000)
     singularity:
         "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
     shell:
@@ -93,10 +101,10 @@ rule coloc_postfinemap:
     params:
         colocthresh=config["colocthresh"]
     resources:
-        mem=10000,
-        mem_mb=10000,
-        mem_mib=10000,
-        disk_mb=10000
+        mem=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        mem_mib=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        disk_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1))
     singularity:
         "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
     shell:

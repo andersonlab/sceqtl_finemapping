@@ -1,2 +1,5 @@
 __default__:
     queue: "normal"
+
+coloc_postfinemap:
+    queue: "long"

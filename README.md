@@ -50,13 +50,16 @@ bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[ho
 ```
 chunk=1
 mkdir -p results_all_egenes
+mkdir -p results_all_egenes/{coloc,finemapping}
 rm -r logs/* # Remove log files
 rm -r sm_logs/*
 rm -r input/LDmatrix # Remove temporary LD files
 rm -r input/vcf # Remove temporary genotyping files
-mv results results_${chunk}
+mv results results_${chunk} # Rename
 bash scripts/998-aggregate_results_per_chunk.sh results_${chunk} input/gene_chr_map.txt # Aggregate the per-cell-type finemapping files from this chunk and aggregate
-mv results_${chunk} results_all_egenes/
+rsync -av results_${chunk}/coloc/ results_all_egenes/coloc/ # move results
+rsync -av results_${chunk}/finemapping/ results_all_egenes/finemapping/
+rm -r results_${chunk} # Remove this chunks data
 ```
 
 4. Combine results after ALL chunks
