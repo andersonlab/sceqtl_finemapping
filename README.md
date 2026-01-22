@@ -35,7 +35,7 @@ Rscript scripts/000-get_coloc_genes.r $varex_f
 bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q oversubscribed -J "snakemake_master_FINEMAP" < submit_snakemake_BH.sh 
 ```
 
-### Or, if running on all genes - need to chunk
+### If running on all genes - need to chunk
 1. Define cell-types as before. Then define genes using all eGenes in 1000 gene chunks. These files are `input/all_egenes_chunk_<i>.txt`
 ```
 Rscript scripts/000-get_all_genes.r
@@ -64,6 +64,13 @@ rm -r results_${chunk} # Remove this chunks data
 
 4. Combine results after ALL chunks
 ```
+```
+
+### If running on all genes - significant only
+1. Get the significant gene x cell-type pairs
+```
+mkdir -p input
+Rscript scripts/000-get_eGene_cond_pairs.r
 ```
 
 
