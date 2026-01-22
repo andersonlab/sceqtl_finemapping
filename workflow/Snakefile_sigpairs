@@ -1,0 +1,135 @@
+# Bradley 19/12/25
+import os
+import gzip
+configfile: "config_sigpairs.yaml"
+
+# Load gene x celltype pairs from input file
+gene_celltype_pairs = []
+gene_cond_path = config["gene_cond_file"]
+print(f"..Looking for gene_cond_file at: {gene_cond_path}")
+print(f"..File exists: {os.path.exists(gene_cond_path)}")
+
+if os.path.exists(gene_cond_path):
+    with gzip.open(gene_cond_path, "rt") as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if len(parts) == 2:
+                gene_celltype_pairs.append((parts[0], parts[1]))
+    print(f"..Loaded {len(gene_celltype_pairs)} gene-celltype pairs")
+else:
+    print(f"..WARNING: gene_cond_file not found at {gene_cond_path}")
+
+# Extract unique genes and celltypes from pairs
+genes = sorted(set([pair[0] for pair in gene_celltype_pairs]))
+celltypes = sorted(set([pair[1] for pair in gene_celltype_pairs]))
+print(f"..Found {len(genes)} unique genes and {len(celltypes)} unique celltypes")
+
+# Dynamically determine memory
+def mem_from_input(input_file, multiplier=10, min=4000):
+    """Return memory in MB as input_file_size_GB × multiplier × 1024."""
+    size_bytes = os.path.getsize(input_file)
+    size_gb = size_bytes / (1024**3)
+    mem_mb = int(size_gb * multiplier * 1024)
+    # enforce a reasonable minimum
+    return max(mem_mb, min)
+
+##########
+# Rule all
+##########
+def gather_cs_per_gene(wildcards):
+    """Gather crediblesets only for gene x celltype pairs that exist."""
+    celltype_list = [pair[1] for pair in gene_celltype_pairs if pair[0] == wildcards.gene]
+    return expand("results/finemapping/{gene}/{celltype}.crediblesets.txt", gene=wildcards.gene, celltype=celltype_list)
+
+rule all:
+    input:
+         expand("results/coloc/{gene}_coloc_postfinemap.txt", gene=genes),
+         expand("results/coloc/{gene}_pairwise_coloc_results.txt", gene=genes)
+
+##########
+# Rules
+###########
+
+rule prep_genotypes:
+    output:
+        "input/LDmatrix/{gene}.ld"
+    params:
+        vcf=config["VCF_FILE"],
+    resources:
+        mem=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+        mem_mib=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+        disk_mb=lambda wildcards, attempt: 3000 * (2 ** (attempt - 1)),
+    singularity:
+        "/software/hgi/softpack/installs/users/bh18//finemapping/3-scripts/singularity.sif"
+    shell:
+        r"""
+            mkdir -p input/{{vcf,LDmatrix}}
+            mkdir -p results/finemapping
+            mkdir -p logs
+            Rscript scripts/get_gene_window.r {wildcards.gene} {wildcards.gene}
+            
+            # Then prep the genotypes
+            filt_vcf="input/vcf/{wildcards.gene}_"
+            LD_file_pref="input/LDmatrix/{wildcards.gene}"
+            region_file="input/vcf/{wildcards.gene}_gene_window.txt"
+            bash scripts/filter_vcf_by_region-compute_LD.sh {params.vcf} "$region_file" "$filt_vcf" "$LD_file_pref"
+        """    
+
+rule run_susie:
+    input:
+        "input/LDmatrix/{gene}.ld"
+    output:
+        "results/finemapping/{gene}/{celltype}.crediblesets.txt"
+    params:
+        eqtl_dir=config["eqtl_dir"]
+    resources:
+        mem=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000),
+        mem_mb=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000),
+        mem_mib=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000),
+        disk_mb=lambda wildcards, input, attempt: mem_from_input(input[0], multiplier=6, min=8000)
+    singularity:
+        "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
+    shell:
+        r"""
+            SAMPLESIZE=$(awk '{{print NF-1; exit}}' {params.eqtl_dir}/dMean__{wildcards.celltype}_all/OPTIM_pcs/base_output/base/Covariates.tsv)
+            echo "SAMPLESIZE: " ${{SAMPLESIZE}}
+            chr=$(awk -F'\t' 'NR==1{{sub(/^chr/,"",$1); print $1}}' input/vcf/{wildcards.gene}_gene_window.txt)
+            echo "chr: " ${{chr}}
+
+            Rscript scripts/runsusie.r \
+                    {wildcards.gene} \
+                    {params.eqtl_dir}/dMean__{wildcards.celltype}_all/OPTIM_pcs/base_output/base/cis_nominal1.cis_qtl_pairs.${{chr}}.tsv \
+                    ${{SAMPLESIZE}} \
+                    {input} \
+                    input/vcf/{wildcards.gene}_.z \
+                    results/finemapping/{wildcards.gene}/{wildcards.celltype}.
+            
+        """
+
+rule coloc_postfinemap:
+    input:
+        gather_cs_per_gene
+    output:
+        "results/coloc/{gene}_coloc_postfinemap.txt",
+        "results/coloc/{gene}_pairwise_coloc_results.txt"
+    params:
+        colocthresh=config["colocthresh"]
+    resources:
+        mem=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        mem_mib=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1)),
+        disk_mb=lambda wildcards, attempt: 10000 * (2 ** (attempt - 1))
+    singularity:
+        "/software/hgi/softpack/installs/users/bh18//finemapping/5-scripts/singularity.sif"
+    shell:
+        r"""
+            mkdir -p results/coloc
+            Rscript scripts/get_eQTL_coloc_networks.r \
+                {wildcards.gene} \
+                "results/finemapping/{wildcards.gene}" \
+                "input/LDmatrix/{wildcards.gene}.ld" \
+                "input/vcf/{wildcards.gene}_.z" \
+                {params.colocthresh}
+        """
+    

@@ -1,0 +1,4 @@
+VCF_FILE: "/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/core_analysis_output/IBDverse_multi-tissue_eQTL_project/IBDverse_genotypes/2024_07_11-genotype_plate12345/imputed.vcf.gz"
+eqtl_dir: "../../../../core_analysis_output/IBDverse_multi-tissue_eQTL_project/2025_06_11-multi_tissue_base_results"
+gene_cond_file: "input/sig_gene_condition_pairs.txt.gz"
+colocthresh: 0.75
