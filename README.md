@@ -73,6 +73,11 @@ mkdir -p input
 Rscript scripts/000-get_eGene_cond_pairs.r
 ```
 
+2. Then run the pipeline (will specify which Snakefile to use, need to just point to the output of the above within `configs/config_sigpairs.yaml`)
+```
+bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q oversubscribed -J "snakemake_master_FINEMAP" < submit_snakemake_BH.sh 
+```
+
 
 
 
