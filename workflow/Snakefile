@@ -1,6 +1,6 @@
 # Bradley 19/12/25
 import os
-configfile: "config.yaml"
+configfile: "configs/config.yaml"
 
 # Load gene names
 with open(config["gene_file"], "r") as f:
