@@ -1,7 +1,9 @@
 ### Fine mapping sc-eQTLs and colocalisation of credible sets.
 #### Bradley - 09/01/2026
 Adjustment of Celeste E. Cohens's pipeline to be ran with snakemake and on specific genes only across all cell-types.
-Requires eQTLs to already be calculated.
+Requires eQTLs to already be calculated. \
+\
+*** WARNING: Depending on the size of the cohort, per-gene temporary LD files (`.ld`) are often very large (~0.5Gb for a cohort of ~400 individuals). While as many temporary files are removed during running of the pipeline as possible, this means that if you have many genes being tested the working directory can require a substantial amount of memory. Please ensure there is enough quota to complete, else the pipeline will fail. For 20k genes, 250 cell-types and 400 individuals, this requires ~ 7TB free memory. *** 
 
 ### Installation
 If working on Sanger farm, no installs needed. Otherwise, need to install the finemapping singularity container from docker and adjust paths in the snakefile accordingly. 

@@ -77,10 +77,14 @@ rule prep_genotypes:
             bash scripts/filter_vcf_by_region-compute_LD.sh {params.vcf} "$region_file" "$filt_vcf" "$LD_file_pref"
             
             # Remove temporary files
-            rm -f "input/vcf/{wildcards.gene}__filtered*"
-            rm -f "input/vcf/{wildcards.gene}__genotypes*"
-            rm -f "input/vcf/{wildcards.gene}_-vcfstats*"
-            rm -f "input/LDmatrix/{wildcards.gene}.bcor"
+            rm -f input/vcf/{wildcards.gene}__filtered*
+            rm -f input/vcf/{wildcards.gene}__genotypes*
+            rm -f input/vcf/{wildcards.gene}_.bim
+            rm -f input/vcf/{wildcards.gene}_.log
+            rm -f input/vcf/{wildcards.gene}__masterfile.txt
+            rm -f input/vcf/{wildcards.gene}_-vcfstats*
+            rm -f input/LDmatrix/{wildcards.gene}.bcor
+            
             
             
         """    
