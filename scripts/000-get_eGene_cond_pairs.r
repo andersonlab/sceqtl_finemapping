@@ -47,3 +47,15 @@ sig.sumstat.df %>%
         quote = FALSE,
         sep = "\t"
     )
+
+sig.sumstat.df %>%
+    select(phenotype_id, annotation) %>%
+    distinct() %>% 
+    filter(phenotype_id %in% c(uncommon)) %>% 
+    write.table(
+        file = gzfile(paste0(outdir, "/uncommon_egenes.txt.gz")),
+        row.names = FALSE,
+        col.names = FALSE,
+        quote = FALSE,
+        sep = "\t"
+    )

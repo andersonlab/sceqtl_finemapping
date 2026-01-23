@@ -10,7 +10,7 @@
 #BSUB -J 1
 
 # Define some params
-config_var=config_sigpairs.yaml
+config_var=configs/config_sigpairs.yaml
 worfklow_prefix="FM_"
 group="team152"
 workdir=${PWD}
@@ -44,7 +44,7 @@ snakemake -j 5000 \
     --keep-going \
     --directory ${workdir} \
     --cluster-config ${config_var} \
-    --cluster-config cluster_config.yaml \
+    --cluster-config configs/cluster_config.yaml \
     --use-singularity \
     --singularity-args "-B /lustre,/software" \
     --restart-times 3 \

@@ -1,7 +1,7 @@
 # Bradley 19/12/25
 import os
 import gzip
-configfile: "config_sigpairs.yaml"
+configfile: "configs/config_sigpairs.yaml"
 
 # Load gene x celltype pairs from input file
 gene_celltype_pairs = []
@@ -52,7 +52,8 @@ rule all:
 
 rule prep_genotypes:
     output:
-        "input/LDmatrix/{gene}.ld"
+        "input/LDmatrix/{gene}.ld",
+        "input/vcf/{gene}_.z"
     params:
         vcf=config["VCF_FILE"],
     resources:
@@ -74,6 +75,14 @@ rule prep_genotypes:
             LD_file_pref="input/LDmatrix/{wildcards.gene}"
             region_file="input/vcf/{wildcards.gene}_gene_window.txt"
             bash scripts/filter_vcf_by_region-compute_LD.sh {params.vcf} "$region_file" "$filt_vcf" "$LD_file_pref"
+            
+            # Remove temporary files
+            rm -f "input/vcf/{wildcards.gene}__filtered*"
+            rm -f "input/vcf/{wildcards.gene}__genotypes*"
+            rm -f "input/vcf/{wildcards.gene}_-vcfstats*"
+            rm -f "input/LDmatrix/{wildcards.gene}.bcor"
+            
+            
         """    
 
 rule run_susie:
@@ -109,7 +118,9 @@ rule run_susie:
 
 rule coloc_postfinemap:
     input:
-        gather_cs_per_gene
+        gather_cs_per_gene,
+        "input/vcf/{gene}_.z",
+        "input/LDmatrix/{gene}.ld"
     output:
         "results/coloc/{gene}_coloc_postfinemap.txt",
         "results/coloc/{gene}_pairwise_coloc_results.txt"
@@ -131,5 +142,12 @@ rule coloc_postfinemap:
                 "input/LDmatrix/{wildcards.gene}.ld" \
                 "input/vcf/{wildcards.gene}_.z" \
                 {params.colocthresh}
+            
+            # Remove LD and vcfs after running coloc
+            rm -f input/LDmatrix/{wildcards.gene}.ld
+            rm -f input/vcf/{wildcards.gene}*
+            
+            # touch output
+            touch {output[0]} {output[1]}
         """
     
